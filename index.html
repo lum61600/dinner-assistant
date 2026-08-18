@@ -424,6 +424,7 @@ a.btn{text-decoration:none;display:inline-block}
       <div class="sum" id="summary"></div>
       <p class="pending" id="pending"></p>
       <div class="btnrow">
+        <button class="btn ghost sm" onclick="copyLink()">複製投票連結</button>
         <button class="btn ghost sm" onclick="exportImage()">結果存成圖片</button>
         <button class="btn ghost sm" onclick="refresh(true)">重新整理</button>
         <button class="btn ghost sm" onclick="backToSetup()">福委設定</button>
@@ -477,13 +478,11 @@ a.btn{text-decoration:none;display:inline-block}
 <script>
 const ROSTER = ['親親','維多','婧菱','Tobey','Nana'];
 const ROTA   = ['Tobey','婧菱','Nana'];
-const KEY    = 'dinner:session:v1';
 const DOW    = ['日','一','二','三','四','五','六'];
 
 let S = blank();
 let me = null;
 let draft = { plus:false, dates:[], rests:[] };
-let mem = null;
 let busy = false;
 let editing = false;
 
@@ -493,18 +492,73 @@ function blank(){
   ], area:'', deadline:'', pool:'', published:false, votes:{}, updatedAt:null };
 }
 
-/* ── 儲存（同一份連結大家共用） ── */
-const hasStore = typeof window.storage === 'object' && window.storage && typeof window.storage.get === 'function';
+/* ── Supabase 設定（只有這兩行要填） ── */
+const SUPA_URL = 'https://huejxwapgrwwpeouetac.supabase.co';
+const SUPA_KEY = 'sb_publishable_BbcWo67eO4TuSI8zWx6QRw_U6JDnoj3';
+const TABLE = 'dinner_sessions';
+
+/* ── 這一次投票的編號，掛在網址 ?s= 上 ── */
+let SID = new URLSearchParams(location.search).get('s') || '';
+function newSid(){
+  return Math.random().toString(36).slice(2,8) + Date.now().toString(36).slice(-4);
+}
+function ready(){ return SUPA_URL.indexOf('supabase.co') > 0 && SUPA_URL.indexOf('請貼上') < 0; }
+function heads(extra){
+  return Object.assign({
+    'apikey': SUPA_KEY,
+    'Authorization': 'Bearer ' + SUPA_KEY,
+    'Content-Type': 'application/json'
+  }, extra||{});
+}
+function dbFail(e){
+  const msg = String((e && e.message) || e || '');
+  if(msg.indexOf('Failed to fetch') >= 0 || msg.indexOf('NetworkError') >= 0){
+    return '連不到資料庫。免費方案閒置一段時間會自動暫停，請福委登入 Supabase 按 Restore，等一分鐘再重新整理。';
+  }
+  return '資料庫回應異常：' + msg;
+}
 async function load(){
-  if(!hasStore) return mem;
-  try{ const r = await window.storage.get(KEY, true); return r ? JSON.parse(r.value) : null; }
-  catch(e){ return null; }
+  if(!ready() || !SID) return null;
+  try{
+    const res = await fetch(SUPA_URL+'/rest/v1/'+TABLE+'?id=eq.'+encodeURIComponent(SID)+'&select=data',
+      { headers: heads() });
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    const rows = await res.json();
+    return (rows && rows[0]) ? rows[0].data : null;
+  }catch(e){
+    console.error(e);
+    return null;
+  }
 }
 async function save(){
   S.updatedAt = new Date().toISOString();
-  if(!hasStore){ mem = S; return true; }
-  try{ await window.storage.set(KEY, JSON.stringify(S), true); return true; }
-  catch(e){ flash('存檔沒成功，網路斷線了嗎？再按一次送出。','warn'); return false; }
+  if(!ready()){ flash('還沒填 Supabase 專案網址，資料存不起來。','warn'); return false; }
+  if(!SID) SID = newSid();
+  try{
+    const res = await fetch(SUPA_URL+'/rest/v1/'+TABLE,
+      { method:'POST',
+        headers: heads({ 'Prefer':'resolution=merge-duplicates,return=minimal' }),
+        body: JSON.stringify({ id:SID, data:S, updated_at:S.updatedAt }) });
+    if(!res.ok){
+      const t = await res.text();
+      throw new Error('HTTP '+res.status+' '+t.slice(0,120));
+    }
+    return true;
+  }catch(e){
+    console.error(e);
+    flash(dbFail(e), 'warn');
+    return false;
+  }
+}
+function voteLink(){
+  return location.origin + location.pathname + '?s=' + SID;
+}
+function copyLink(){
+  const url = voteLink();
+  navigator.clipboard.writeText(url).then(
+    ()=> flash('投票連結已複製，貼到群組就可以了。'),
+    ()=> { flash('複製失敗，請手動複製網址列。','warn'); }
+  );
 }
 
 function flash(msg, kind){
@@ -915,9 +969,15 @@ async function publish(){
   S.published = true;
   const btn = document.getElementById('publishBtn');
   btn.disabled = true; btn.innerHTML = '<span class="spin"></span>發布中';
+  if(!SID) SID = newSid();
   const ok = await save();
   btn.disabled = false; btn.textContent = '發布投票';
-  if(ok){ flash('已發布，把這個連結貼到群組就可以開始投票。'); render(); window.scrollTo({top:0,behavior:'smooth'}); }
+  if(ok){
+    try{ history.replaceState(null, '', voteLink()); }catch(e){}
+    flash('已發布，按「複製投票連結」把網址貼到群組就可以開始投票。');
+    render();
+    window.scrollTo({top:0,behavior:'smooth'});
+  }
 }
 function backToSetup(){
   editing = true;
@@ -1334,7 +1394,8 @@ document.addEventListener('click', function(e){
   const saved = await load();
   if(saved && saved.published) S = Object.assign(blank(), saved);
   render();
-  if(!hasStore) flash('這個環境沒有共用儲存，票只會留在這個視窗裡。','warn');
+  if(!ready()) flash('尚未設定 Supabase 專案網址，投票結果不會被保存。','warn');
+  else if(SID && !S.published) flash('這組投票編號查不到資料，可能連結有誤，或資料庫正在喚醒中。','warn');
   setInterval(()=>{ if(!document.hidden) refresh(false); }, 15000);
 })();
 </script>
