@@ -1,0 +1,1342 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>聚餐選店助手 · 客資部</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Noto+Sans+TC:wght@400;500;700&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#F4F5F6; --card:#FFFFFF; --tint:#F7F8F9;
+  --ink:#17191C; --ink-2:#5B6169; --ink-3:#9AA0A8;
+  --line:#E7E9EC; --line-2:#D6DAE0;
+  --acc:#0E7C66; --acc-tint:#E9F4F1; --acc-ink:#0A5A4A;
+  --warn:#C2410C; --warn-tint:#FEF1EA;
+  --sans:"Inter","Noto Sans TC","PingFang TC","Microsoft JhengHei",sans-serif;
+  --num:"Inter",ui-monospace,sans-serif;
+  --r:12px; --r-s:8px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0}
+body{
+  background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:15px;line-height:1.6;
+  -webkit-text-size-adjust:100%;-webkit-font-smoothing:antialiased;padding:0 14px 72px;
+}
+.wrap{max-width:600px;margin:0 auto}
+
+/* 卡片 */
+.slip{background:var(--card);border-radius:var(--r);padding:22px 20px;margin:0 0 12px;position:relative}
+.slip.top{margin-top:16px}
+.perf{border:0;height:1px;background:var(--line);margin:20px -20px}
+
+/* 抬頭 */
+.eyebrow{font-size:13px;color:var(--ink-3);margin:0 0 6px;letter-spacing:0}
+h1{font-size:26px;font-weight:600;letter-spacing:-.02em;line-height:1.2;margin:0}
+h1 .sub{display:none}
+.seal-badge{
+  position:absolute;top:20px;right:20px;display:flex;align-items:center;gap:7px;
+  background:var(--acc-tint);color:var(--acc-ink);border-radius:999px;padding:6px 13px 6px 7px;
+}
+.seal-badge b{font-size:13.5px;font-weight:500;order:2}
+.seal-badge span{
+  order:1;width:24px;height:24px;border-radius:50%;background:var(--acc);color:#fff;
+  font-size:10.5px;display:flex;align-items:center;justify-content:center;letter-spacing:0;
+}
+
+/* 段落標題 */
+h2{display:flex;align-items:center;gap:9px;font-size:17px;font-weight:600;letter-spacing:-.01em;margin:0 0 4px}
+h2 .num{font-family:var(--num);font-size:12px;font-weight:500;color:var(--acc);margin:0}
+.hint{font-size:13px;color:var(--ink-3);margin:0 0 16px}
+
+/* 須知 / 清單摺疊 */
+details.notes,details.pool{border:1px solid var(--line);border-radius:var(--r-s);margin-top:18px;overflow:hidden}
+details.notes summary,details.pool summary{
+  cursor:pointer;list-style:none;display:flex;align-items:center;gap:10px;padding:13px 14px;
+  background:var(--tint);font-size:14px;font-weight:500;letter-spacing:0;transition:.14s;
+}
+details.notes summary::-webkit-details-marker,details.pool summary::-webkit-details-marker{display:none}
+details.notes summary .tag,details.pool summary .tag{font-size:12px;font-weight:400;color:var(--ink-3)}
+details.pool summary .tag b{color:var(--acc);font-weight:500}
+details.notes summary::after,details.pool summary::after{
+  content:"展開";margin-left:auto;font-size:12.5px;color:var(--ink-2);flex:0 0 auto;
+  width:auto;height:auto;background:transparent;border-radius:0;
+}
+details.notes[open] summary::after,details.pool[open] summary::after{content:"收合"}
+.notes ul{margin:0;padding:14px;list-style:none;display:grid;gap:11px}
+.notes li{position:relative;padding-left:16px;margin:0;font-size:13.5px;color:var(--ink-2)}
+.notes li::before{content:"";position:absolute;left:0;top:9px;width:5px;height:5px;border-radius:50%;background:var(--line-2)}
+.notes li b{color:var(--ink);font-weight:500}
+.calc{
+  margin:0 14px 14px;background:var(--tint);border:0;border-radius:var(--r-s);padding:12px 14px;
+  font-family:var(--sans);font-size:13px;color:var(--ink-2);line-height:1.6;
+}
+.calc b{font-family:var(--num);font-size:17px;font-weight:600;color:var(--ink)}
+
+/* 福委分段控制 */
+.rota{display:flex;background:var(--tint);border-radius:10px;padding:4px;gap:4px;margin:0}
+.chip{
+  flex:1;border:0;background:transparent;border-radius:7px;padding:11px 6px;cursor:pointer;
+  font-family:var(--sans);font-size:14px;font-weight:500;color:var(--ink-2);letter-spacing:0;transition:.14s;
+}
+.chip:hover{color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--card);color:var(--ink);box-shadow:0 1px 2px rgba(23,25,28,.09)}
+
+/* 表單 */
+label.fld{display:block;margin-bottom:14px}
+label.fld .lb{display:block;font-size:12px;font-weight:500;color:var(--ink-2);margin-bottom:6px;letter-spacing:0;text-transform:none}
+input[type=text],input[type=url],input[type=number],select,textarea{
+  width:100%;font-family:var(--sans);font-size:15px;color:var(--ink);background:var(--card);
+  border:1px solid var(--line-2);border-radius:var(--r-s);padding:12px 13px;transition:.14s;
+}
+select{cursor:pointer}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-tint)}
+:focus-visible{outline:2px solid var(--acc);outline-offset:2px}
+
+.dfield{
+  width:100%;text-align:left;background:var(--card);border:1px solid var(--line-2);border-radius:var(--r-s);
+  padding:12px 13px;font-family:var(--sans);font-size:15px;color:var(--ink);cursor:pointer;
+  display:flex;align-items:center;transition:.14s;
+}
+.dfield:hover{border-color:var(--ink-3)}
+.dfield.on{border-color:var(--acc);box-shadow:0 0 0 3px var(--acc-tint)}
+.dfield .ph{color:var(--ink-3)}
+.dfield .dw2{color:var(--ink-3);font-size:13px;margin-left:8px}
+.dfield::after{
+  content:"";margin-left:auto;width:7px;height:7px;
+  border-right:1.5px solid var(--ink-3);border-bottom:1.5px solid var(--ink-3);
+  transform:rotate(45deg) translateY(-2px);
+}
+.grid-dates{display:grid;gap:10px}
+.date-row{display:flex;align-items:center;gap:10px}
+.date-row .idx{
+  flex:0 0 22px;width:22px;font-family:var(--num);font-size:12px;color:var(--ink-3);
+  display:flex;align-items:center;justify-content:center;border:0;height:auto;
+}
+.mini{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+
+/* 按鈕 */
+.btn{
+  font-family:var(--sans);font-weight:500;font-size:13.5px;letter-spacing:0;padding:11px 15px;
+  border-radius:var(--r-s);border:1px solid var(--line-2);background:var(--card);color:var(--ink);
+  cursor:pointer;transition:.14s;
+}
+.btn:hover{border-color:var(--ink-3)}
+.btn:disabled{opacity:.45;cursor:not-allowed}
+.btn.ghost{background:var(--card)}
+.btn.sm{padding:9px 13px;font-size:13px}
+.btn.block{display:block;width:100%;background:var(--ink);border-color:var(--ink);color:#fff;font-size:15px;padding:14px;text-align:center}
+.btn.block:hover{background:#000;border-color:#000}
+.btnrow{display:flex;gap:8px;flex-wrap:wrap;margin-top:16px}
+
+/* 餐廳輸入卡 */
+.rcard{border:1px solid var(--line);border-radius:var(--r-s);padding:14px;margin-bottom:10px;background:var(--card)}
+.rcard .top{display:flex;align-items:center;gap:8px;margin-bottom:10px}
+.rcard .no{font-family:var(--num);font-size:12px;color:var(--ink-3);letter-spacing:0}
+
+/* 店家清單 */
+.addrow{display:flex;gap:8px;margin:14px 14px 0}
+.addrow input{flex:1}
+#poolItems{padding:0 14px}
+.pitem{display:flex;align-items:center;gap:10px;padding:11px 0;border-bottom:1px solid var(--line);font-size:14.5px}
+.pitem:last-child{border-bottom:0}
+.pitem span{flex:1;min-width:0;word-break:break-all}
+.px{
+  border:1px solid var(--line-2);background:var(--card);color:var(--ink-3);cursor:pointer;
+  width:28px;height:28px;flex:0 0 28px;font-size:12px;line-height:1;border-radius:var(--r-s);transition:.14s;
+}
+.px:hover{border-color:var(--warn);color:var(--warn)}
+details.pool .hint{padding:0 14px 14px;margin:0}
+
+/* 截止 */
+.deadbar{
+  display:flex;align-items:center;gap:10px;background:var(--card);border:0;border-radius:var(--r);
+  padding:14px 16px;margin:0 0 12px;flex-wrap:wrap;
+}
+.deadbar .k{font-size:13px;color:var(--ink-3);letter-spacing:0;font-family:var(--sans)}
+.deadbar .d{font-size:15px;font-weight:500;font-family:var(--sans);letter-spacing:0}
+.deadbar .r{
+  margin-left:auto;background:var(--acc-tint);color:var(--acc-ink);border-radius:999px;
+  padding:5px 12px;font-size:12.5px;font-weight:500;
+}
+.deadbar.over .r{background:var(--warn-tint);color:var(--warn)}
+
+/* 選項 */
+.who{display:block}
+.opt{
+  display:flex;align-items:center;gap:12px;width:100%;text-align:left;cursor:pointer;
+  border:1px solid var(--line);border-radius:10px;background:var(--card);padding:14px;margin-bottom:8px;
+  font-family:var(--sans);transition:.14s;
+}
+.opt:hover{border-color:var(--ink-3)}
+.opt[aria-pressed="true"]{border-color:var(--acc);background:var(--acc-tint)}
+.opt .tick{
+  order:-1;flex:0 0 20px;width:20px;height:20px;border-radius:50%;border:1.5px solid var(--line-2);
+  display:flex;align-items:center;justify-content:center;font-size:11px;color:transparent;
+  opacity:1;position:static;background:var(--card);transition:.14s;
+}
+.opt[aria-pressed="true"] .tick{background:var(--acc);border-color:var(--acc);color:#fff;opacity:1}
+.opt .name{font-size:15px;font-weight:500;letter-spacing:0;font-family:var(--sans)}
+.opt .meta{font-size:12.5px;color:var(--ink-3);margin-top:1px;display:flex;gap:8px;flex-wrap:wrap}
+.opt.dim{opacity:.4}
+.ropt{margin-bottom:8px;position:relative}
+.ropt .opt{margin-bottom:0}
+.rlink{display:inline-block;margin:6px 0 0 46px;font-size:12.5px;font-weight:500;color:var(--acc);text-decoration:none}
+.rlink:hover{text-decoration:underline}
+.dow-tag{font-size:12.5px;color:var(--ink-3);margin-left:8px;font-family:var(--sans)}
+
+.toggle{
+  display:flex;align-items:center;gap:12px;border:1px solid var(--line);border-radius:10px;
+  padding:14px;background:var(--card);cursor:pointer;width:100%;text-align:left;
+  font-family:var(--sans);transition:.14s;
+}
+.toggle[aria-pressed="true"]{border-color:var(--acc);background:var(--acc-tint)}
+.toggle .box{
+  flex:0 0 20px;width:20px;height:20px;border-radius:50%;border:1.5px solid var(--line-2);
+  display:flex;align-items:center;justify-content:center;font-size:11px;color:transparent;background:var(--card);
+}
+.toggle[aria-pressed="true"] .box{background:var(--acc);border-color:var(--acc);color:#fff}
+.toggle .v{opacity:1}
+.toggle b{font-weight:500}
+
+/* 票數表 */
+.mlabel{font-size:12px;font-weight:500;color:var(--ink-2);letter-spacing:0;margin:20px 0 8px}
+.sheetwrap{overflow-x:auto;border:1px solid var(--line);border-radius:10px;-webkit-overflow-scrolling:touch}
+table.vote{border-collapse:collapse;width:100%;font-size:13.5px;background:var(--card);min-width:380px}
+table.vote th{
+  background:var(--tint);color:var(--ink-2);font-size:12px;font-weight:500;padding:10px 6px;
+  text-align:center;border-bottom:1px solid var(--line);border-right:0;min-width:58px;
+}
+table.vote th .dw{display:block;font-size:11px;font-weight:400;color:var(--ink-3)}
+table.vote th.win{background:var(--acc);color:#fff}
+table.vote th.win .dw{color:rgba(255,255,255,.8)}
+table.vote td{
+  padding:11px 6px;text-align:center;border-bottom:1px solid var(--line);border-right:0;color:var(--ink-3);
+}
+table.vote td.rowh,table.vote th.rowh{
+  text-align:left;padding-left:13px;background:var(--card);color:var(--ink);font-weight:500;
+  white-space:nowrap;min-width:72px;
+}
+table.vote th.rowh{background:var(--tint);color:var(--ink-2);font-weight:500}
+table.vote td.wincol{background:var(--acc-tint)}
+table.vote .dot{
+  display:inline-block;width:18px;height:18px;border-radius:50%;background:var(--acc);color:#fff;
+  font-size:11px;line-height:18px;
+}
+table.vote .nil{color:var(--ink-3)}
+table.vote tr.total td{
+  border-bottom:0;font-family:var(--num);font-weight:600;font-size:14px;color:var(--ink);background:var(--card);
+}
+table.vote tr.total td.wincol{background:var(--acc-tint)}
+table.vote tr.total td.rowh{font-family:var(--sans);font-size:12px;font-weight:500;color:var(--ink-3)}
+
+/* 摘要 */
+.sum{display:grid;grid-template-columns:repeat(3,1fr);gap:10px;margin-top:18px;background:transparent;border:0}
+.sum div{background:var(--tint);border-radius:10px;padding:14px 10px;text-align:center}
+.sum .n{font-family:var(--num);font-size:24px;font-weight:600;letter-spacing:-.02em;line-height:1;color:var(--ink)}
+.sum .k{font-family:var(--sans);font-size:12px;letter-spacing:0;color:var(--ink-3);margin-top:5px}
+.pending{font-size:13px;color:var(--ink-2);margin-top:14px}
+.pending b{color:var(--warn);font-weight:500}
+
+/* 最後結果 */
+.final{border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-top:16px}
+.final .fr{display:flex;gap:12px;padding:14px 16px;border-bottom:1px solid var(--line)}
+.final .fr:last-child{border-bottom:0}
+.final .fk{flex:0 0 92px;font-size:12.5px;color:var(--ink-3)}
+.final .fv{font-size:15px;font-weight:500}
+.final .fv small{display:block;font-size:12.5px;font-weight:400;color:var(--ink-3);margin-top:2px}
+.final .fr.hi{background:var(--acc-tint)}
+.final .fr.hi .fk{color:var(--acc-ink)}
+.final .fr.hi .fv{color:var(--acc-ink)}
+
+/* 提示 */
+.flash{border:0;border-radius:var(--r-s);background:var(--acc-tint);color:var(--acc-ink);padding:11px 13px;font-size:13px;margin-bottom:12px}
+.flash.warn{background:var(--warn-tint);color:var(--warn)}
+.footer{text-align:center;font-size:12px;color:var(--ink-3);letter-spacing:0;padding:6px 0 0}
+.spin{display:inline-block;width:12px;height:12px;border:2px solid var(--line-2);border-top-color:var(--acc);
+  border-radius:50%;animation:sp .7s linear infinite;vertical-align:-2px;margin-right:6px}
+@keyframes sp{to{transform:rotate(360deg)}}
+.hide{display:none!important}
+
+/* 日曆 */
+.calpop{
+  position:absolute;z-index:60;background:var(--card);border:1px solid var(--line);border-radius:var(--r);
+  box-shadow:0 12px 32px -12px rgba(23,25,28,.22);padding:14px;width:300px;
+}
+.calhead{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.calhead span{font-size:14.5px;font-weight:500}
+.calhead button{
+  width:32px;height:32px;border:1px solid var(--line-2);background:var(--card);border-radius:var(--r-s);
+  cursor:pointer;font-size:15px;color:var(--ink-2);line-height:1;
+}
+.calhead button:hover{border-color:var(--ink-3);color:var(--ink)}
+.calgrid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.calgrid .cdow{text-align:center;font-size:11px;color:var(--ink-3);padding:4px 0}
+.cday{
+  border:0;background:transparent;padding:9px 0;font-family:var(--num);font-size:14px;color:var(--ink);
+  cursor:pointer;border-radius:var(--r-s);
+}
+.cday:hover{background:var(--tint)}
+.cday.today{box-shadow:inset 0 0 0 1px var(--acc);color:var(--acc)}
+.cday.sel{background:var(--acc);color:#fff;font-weight:600}
+.calfoot{display:flex;gap:8px;margin-top:10px;border-top:1px solid var(--line);padding-top:10px}
+.calfoot button{
+  flex:1;border:1px solid var(--line-2);background:var(--card);padding:9px;cursor:pointer;border-radius:var(--r-s);
+  font-family:var(--sans);font-size:13px;color:var(--ink-2);
+}
+.calfoot button:hover{border-color:var(--ink-3);color:var(--ink)}
+
+/* 圖片預覽 */
+.modal{position:fixed;inset:0;background:rgba(23,25,28,.55);z-index:70;display:flex;align-items:center;
+  justify-content:center;padding:18px;overflow:auto}
+.mbox{background:var(--card);border-radius:var(--r);padding:16px;max-width:520px;width:100%;max-height:92vh;overflow:auto}
+.mbox img{width:100%;display:block;border:1px solid var(--line);border-radius:var(--r-s)}
+.mhint{font-size:12.5px;color:var(--ink-3);margin:10px 0 0}
+a.btn{text-decoration:none;display:inline-block}
+
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01ms!important;transition-duration:.01ms!important}}
+@media(max-width:420px){
+  h1{font-size:23px}
+  .slip{padding:20px 16px}
+  .perf{margin:18px -16px}
+  .seal-badge{top:18px;right:16px;padding:5px 11px 5px 6px}
+  .mini{grid-template-columns:1fr}
+}
+</style>
+</head>
+<body>
+<div class="wrap">
+
+  <!-- ══ 抬頭 ══ -->
+  <section class="slip top">
+    <div id="sealBadge" class="seal-badge hide"><b id="sealName"></b><span id="sealIni"></span></div>
+    <p class="eyebrow">客資部 · 部門聚餐</p>
+    <h1>聚餐選店助手</h1>
+
+    <details class="notes" id="notesBox">
+      <summary>聚餐須知<span class="tag">預算・假單・12 月停辦</span></summary>
+      <ul>
+        <li><b>單數月</b>決定聚餐地點和日期，選 4 天日期在群組通知大家投票。</li>
+        <li>預算<b>每人 1000 元（含 10% 服務費）</b>，點餐時自行算好金額，超過的部分結帳時把錢給<b>親親</b>。</li>
+        <li>晚班 <b>19:00</b> 提交公出假單，假別 <b>0501 公出</b>，請假說明填「部門聚餐」，記得帶公務機。</li>
+        <li><b>12 月</b>客資部停辦，讓大家去參加其他班的聖誕聚餐。</li>
+      </ul>
+      <div class="calc">
+        每人 1000 ÷ 1.1 ＝ 餐點可點約 <b>909 元</b>
+      </div>
+    </details>
+  </section>
+
+  <div id="flash"></div>
+
+  <!-- ══ 福委設定 ══ -->
+  <div id="setupView">
+    <section class="slip">
+      <h2><span class="num">01</span>本次福委</h2>
+      <p class="hint">選好本次福委，才能設定日期與餐廳。</p>
+      <div class="rota" id="rota"></div>
+      <p class="hint" id="nextUp" style="margin:8px 0 0"></p>
+    </section>
+
+    <section class="slip" id="dateSetup">
+      <h2><span class="num">02</span>投票截止與候選日期</h2>
+      <p class="hint">先訂截止日，再填 4 天讓大家投票，群組貼連結就好。</p>
+      <label class="fld"><span class="lb">投票截止日</span>
+        <button type="button" class="dfield" id="fld_deadline" onclick="openCal('deadline',this)"></button></label>
+      <div class="grid-dates" id="dateInputs"></div>
+      <div id="decWarn"></div>
+    </section>
+
+    <section class="slip" id="restSetup">
+      <h2><span class="num">03</span>四間候選餐廳</h2>
+      <p class="hint">用下面的搜尋去找店，把店名和食記連結貼回四張卡片。</p>
+      <div class="mini">
+        <label class="fld"><span class="lb">地區</span><input type="text" id="area" placeholder="例：台北市信義區" oninput="onArea()"></label>
+        <label class="fld"><span class="lb">想吃什麼（可空白）</span><input type="text" id="cuisine" placeholder="例：熱炒、日式、火鍋"></label>
+      </div>
+      <div class="btnrow" style="margin-top:0">
+        <button class="btn ghost sm" onclick="openSearch('maps')">Google 地圖找店 ↗</button>
+        <button class="btn ghost sm" onclick="openSearch('rank')">熱門推薦 ↗</button>
+        <button class="btn ghost sm" onclick="openSearch('blog')">部落格食記 ↗</button>
+      </div>
+      <div class="btnrow" style="margin-top:8px">
+        <button class="btn ghost sm" id="mapBtn" onclick="rollFromMap()">🗺 從地圖抓 4 間</button>
+        <button class="btn ghost sm" id="rollBtn" onclick="rollRestaurants()">🎲 店家清單抽 4 間</button>
+      </div>
+      <div id="rollStatus"></div>
+
+      <details class="pool">
+        <summary>店家清單<span class="tag">目前 <b id="poolCount">0 間</b></span></summary>
+        <div class="addrow">
+          <input type="text" id="poolNew" placeholder="輸入店名，例：老四川麻辣鍋 板橋"
+                 onkeydown="if(event.key==='Enter'){event.preventDefault();addPool();}">
+          <button class="btn sm" onclick="addPool()">新增</button>
+        </div>
+        <div id="poolItems"></div>
+        <p class="hint" style="margin:12px 0 0">這裡放你們自己常去的店，抽籤時會優先從這裡挑（會依上面的地區篩選）。按 ✕ 刪掉，一次貼多間用逗號或換行分隔。清單跟著發布一起存起來。</p>
+      </details>
+
+      <hr class="perf">
+      <div id="restCards"></div>
+      <div class="btnrow">
+        <button class="btn block" id="publishBtn" onclick="publish()">發布投票</button>
+      </div>
+    </section>
+  </div>
+
+  <!-- ══ 投票 ══ -->
+  <div id="voteView" class="hide">
+    <div id="deadlineBar"></div>
+    <section class="slip">
+      <h2><span class="num">01</span>你是誰</h2>
+      <p class="hint">選自己的名字，就能改自己的票。</p>
+      <div id="whoList"></div>
+    </section>
+
+    <section class="slip" id="voteBody">
+      <h2><span class="num">02</span>可以出席的日期</h2>
+      <p class="hint">可以複選，有空的都勾。</p>
+      <div id="dateOpts"></div>
+
+      <hr class="perf">
+      <h2><span class="num">03</span>想去的餐廳</h2>
+      <p class="hint" id="restHint">每人最多選兩間。</p>
+      <div id="restOpts"></div>
+
+      <hr class="perf">
+      <h2><span class="num">04</span>攜伴</h2>
+      <p class="hint">要帶人就打 V。</p>
+      <button class="toggle" id="plusOne" aria-pressed="false" onclick="togglePlus()">
+        <span class="box"><span class="v">V</span></span>
+        <span><b>我要攜伴</b><br><span style="font-size:12.5px;color:var(--ink-60)">攜伴人數會算進總人數與預算</span></span>
+      </button>
+
+      <div class="btnrow">
+        <button class="btn block" id="saveVote" onclick="saveVote()">送出我的票</button>
+      </div>
+    </section>
+
+    <section class="slip">
+      <h2><span class="num">05</span>目前票數</h2>
+      <p class="hint">誰投了什麼一目了然，投完即時更新。</p>
+      <div id="matrixOut"></div>
+      <div class="sum" id="summary"></div>
+      <p class="pending" id="pending"></p>
+      <div class="btnrow">
+        <button class="btn ghost sm" onclick="exportImage()">結果存成圖片</button>
+        <button class="btn ghost sm" onclick="refresh(true)">重新整理</button>
+        <button class="btn ghost sm" onclick="backToSetup()">福委設定</button>
+      </div>
+    </section>
+
+    <section class="slip">
+      <h2><span class="num">06</span>最後結果</h2>
+      <p class="hint">票開完後由福委確認，產生要貼在公告表的那一列。</p>
+      <div class="mini">
+        <label class="fld"><span class="lb">聚餐日期</span><select id="fDate"></select></label>
+        <label class="fld"><span class="lb">聚餐時間</span><select id="fTime"></select></label>
+      </div>
+      <label class="fld"><span class="lb">聚餐地點</span><select id="fRest"></select></label>
+      <label class="fld"><span class="lb">地址</span><input type="text" id="fAddr" placeholder="新北市板橋區中山路一段35號2F"></label>
+      <label class="fld"><span class="lb">金額預算</span><input type="text" id="fBudget" value="1000/人"></label>
+      <div class="btnrow">
+        <button class="btn block" onclick="makeFinal()">產生最後結果</button>
+      </div>
+      <div id="finalOut"></div>
+    </section>
+  </div>
+
+  <p class="footer">客資部聚餐輪值　Tobey　婧菱　Nana</p>
+
+  <div id="calPop" class="calpop hide">
+    <div class="calhead">
+      <button type="button" onclick="calMove(-1)">‹</button>
+      <span id="calTitle"></span>
+      <button type="button" onclick="calMove(1)">›</button>
+    </div>
+    <div class="calgrid" id="calGrid"></div>
+    <div class="calfoot">
+      <button type="button" onclick="calSet('')">清除</button>
+      <button type="button" onclick="closeCal()">關閉</button>
+    </div>
+  </div>
+
+  <div id="imgModal" class="modal hide">
+    <div class="mbox">
+      <img id="imgOut" alt="聚餐投票結果">
+      <p class="mhint">長按圖片可以存檔或直接分享到群組。</p>
+      <div class="btnrow" style="margin-top:12px">
+        <a id="dlBtn" class="btn sm" download="聚餐投票結果.png">下載圖片</a>
+        <button class="btn ghost sm" onclick="closeImg()">關閉</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+const ROSTER = ['親親','維多','婧菱','Tobey','Nana'];
+const ROTA   = ['Tobey','婧菱','Nana'];
+const KEY    = 'dinner:session:v1';
+const DOW    = ['日','一','二','三','四','五','六'];
+
+let S = blank();
+let me = null;
+let draft = { plus:false, dates:[], rests:[] };
+let mem = null;
+let busy = false;
+let editing = false;
+
+function blank(){
+  return { fuwei:null, dates:['','','',''], restaurants:[
+    {name:'',url:''},{name:'',url:''},{name:'',url:''},{name:'',url:''}
+  ], area:'', deadline:'', pool:'', published:false, votes:{}, updatedAt:null };
+}
+
+/* ── 儲存（同一份連結大家共用） ── */
+const hasStore = typeof window.storage === 'object' && window.storage && typeof window.storage.get === 'function';
+async function load(){
+  if(!hasStore) return mem;
+  try{ const r = await window.storage.get(KEY, true); return r ? JSON.parse(r.value) : null; }
+  catch(e){ return null; }
+}
+async function save(){
+  S.updatedAt = new Date().toISOString();
+  if(!hasStore){ mem = S; return true; }
+  try{ await window.storage.set(KEY, JSON.stringify(S), true); return true; }
+  catch(e){ flash('存檔沒成功，網路斷線了嗎？再按一次送出。','warn'); return false; }
+}
+
+function flash(msg, kind){
+  const el = document.getElementById('flash');
+  if(!msg){ el.innerHTML=''; return; }
+  el.innerHTML = '<div class="flash'+(kind==='warn'?' warn':'')+'">'+esc(msg)+'</div>';
+  if(kind!=='warn') setTimeout(()=>{ if(el.firstChild && el.firstChild.textContent===msg) el.innerHTML=''; },4000);
+}
+function esc(s){ return String(s==null?'':s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function fmtDate(d){
+  if(!d) return '';
+  const t = new Date(d+'T00:00:00');
+  if(isNaN(t)) return d;
+  return (t.getMonth()+1)+'/'+t.getDate();
+}
+function dowOf(d){
+  if(!d) return '';
+  const t = new Date(d+'T00:00:00');
+  return isNaN(t) ? '' : '週'+DOW[t.getDay()];
+}
+
+/* ══ 設定畫面 ══ */
+function renderRota(){
+  const box = document.getElementById('rota');
+  box.innerHTML = ROTA.map((n,i)=>
+    '<button class="chip" aria-pressed="'+(S.fuwei===n)+'" onclick="pickFuwei(\''+n+'\')">'+n+'</button>'
+  ).join('');
+  const ni = ROTA.indexOf(S.fuwei);
+  document.getElementById('nextUp').textContent = ni>=0 ? '下一棒：'+ROTA[(ni+1)%ROTA.length] : '';
+  document.getElementById('sealBadge').classList.toggle('hide', !S.fuwei);
+  document.getElementById('sealName').textContent = S.fuwei||'';
+  document.getElementById('sealIni').textContent = (S.fuwei||'').charAt(0);
+  const off = !S.fuwei;
+  ['dateSetup','restSetup'].forEach(id=>{
+    const s = document.getElementById(id);
+    s.style.opacity = off?.45:1; s.style.pointerEvents = off?'none':'auto';
+  });
+}
+let cal = { key:null, view:null };
+function isoOf(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+function getDateVal(key){ return key==='deadline' ? (S.deadline||'') : (S.dates[+key.slice(1)]||''); }
+function setDateVal(key, v){
+  if(key==='deadline') S.deadline = v; else S.dates[+key.slice(1)] = v;
+  renderDateFields(); checkDec();
+}
+function renderDateFields(){
+  const put = (id,v)=>{
+    const el = document.getElementById(id); if(!el) return;
+    el.innerHTML = v ? (slash(v,true)+'<span class="dw2">'+dowOf(v)+'</span>') : '<span class="ph">選擇日期</span>';
+  };
+  put('fld_deadline', S.deadline||'');
+  (S.dates||[]).forEach((d,i)=> put('fld_d'+i, d||''));
+}
+function openCal(key, btn){
+  cal.key = key;
+  const cur = getDateVal(key);
+  cal.view = cur ? new Date(cur+'T00:00:00') : new Date();
+  cal.view.setDate(1);
+  drawCal();
+  const pop = document.getElementById('calPop');
+  pop.classList.remove('hide');
+  const r = btn.getBoundingClientRect();
+  const w = Math.min(300, window.innerWidth-24);
+  pop.style.width = w+'px';
+  pop.style.left = Math.max(12, Math.min(r.left + window.scrollX, window.innerWidth - w - 12))+'px';
+  pop.style.top = (r.bottom + window.scrollY + 6)+'px';
+  document.querySelectorAll('.dfield').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+}
+function closeCal(){
+  const p = document.getElementById('calPop');
+  if(p) p.classList.add('hide');
+  document.querySelectorAll('.dfield').forEach(b=>b.classList.remove('on'));
+}
+function calMove(n){ cal.view.setMonth(cal.view.getMonth()+n); drawCal(); }
+function calSet(v){ setDateVal(cal.key, v); closeCal(); }
+function drawCal(){
+  const y = cal.view.getFullYear(), m = cal.view.getMonth();
+  document.getElementById('calTitle').textContent = y+' 年 '+(m+1)+' 月';
+  const first = new Date(y,m,1).getDay(), days = new Date(y,m+1,0).getDate();
+  const sel = getDateVal(cal.key), today = isoOf(new Date());
+  let g = DOW.map(d=>'<span class="cdow">'+d+'</span>').join('');
+  for(let i=0;i<first;i++) g += '<span></span>';
+  for(let d=1;d<=days;d++){
+    const v = y+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+    g += '<button type="button" class="cday'+(v===sel?' sel':'')+(v===today?' today':'')+'" onclick="calSet(\''+v+'\')">'+d+'</button>';
+  }
+  document.getElementById('calGrid').innerHTML = g;
+}
+function renderDeadline(){
+  const bar = document.getElementById('deadlineBar');
+  if(!bar) return;
+  if(!S.deadline){ bar.innerHTML=''; return; }
+  const end = new Date(S.deadline+'T23:59:59');
+  const days = Math.ceil((end - new Date())/86400000);
+  let right = '', over = false;
+  if(isNaN(end)){ bar.innerHTML=''; return; }
+  if(days > 1) right = '還有 '+days+' 天';
+  else if(days === 1) right = '今天最後一天';
+  else { right = '已截止'; over = true; }
+  bar.innerHTML = '<div class="deadbar'+(over?' over':'')+'">'+
+    '<span class="k">投票截止</span>'+
+    '<span class="d">'+slash(S.deadline, true)+' '+dowOf(S.deadline)+'</span>'+
+    '<span class="r">'+right+'</span></div>';
+}
+function pickFuwei(n){ S.fuwei = (S.fuwei===n?null:n); renderRota(); }
+
+function buildDateInputs(){
+  const box = document.getElementById('dateInputs');
+  box.innerHTML = S.dates.map((d,i)=>
+    '<div class="date-row"><span class="idx">'+(i+1)+'</span>'+
+    '<button type="button" class="dfield" id="fld_d'+i+'" onclick="openCal(\'d'+i+'\',this)"></button></div>'
+  ).join('');
+  renderDateFields();
+  checkDec();
+}
+function checkDec(){
+  const dec = S.dates.some(d=> d && new Date(d+'T00:00:00').getMonth()===11);
+  document.getElementById('decWarn').innerHTML = dec
+    ? '<div class="flash warn" style="margin:14px 0 0">選到 12 月了 — 客資部 12 月停辦，大家去參加其他班的聖誕聚餐。</div>' : '';
+}
+
+function buildRestCards(){
+  const box = document.getElementById('restCards');
+  box.innerHTML = S.restaurants.map((r,i)=>
+    '<div class="rcard"><div class="top"><span class="no">店 '+(i+1)+'</span></div>'+
+    '<label class="fld"><span class="lb">店名</span><input type="text" id="rn'+i+'" value="'+esc(r.name)+'" placeholder="餐廳名稱" oninput="onRest('+i+')"></label>'+
+    '<label class="fld"><span class="lb">食記連結</span><input type="url" id="ru'+i+'" value="'+esc(r.url)+'" placeholder="https://" oninput="onRest('+i+')"></label>'+
+    '<button class="btn ghost sm" onclick="googleIt('+i+')">去 Google 看 ↗</button>'+
+    '</div>'
+  ).join('');
+}
+function onRest(i){
+  S.restaurants[i] = {
+    name: document.getElementById('rn'+i).value,
+    url: document.getElementById('ru'+i).value
+  };
+}
+function fillRest(i, r){
+  S.restaurants[i] = { name:r.name||'', url:r.url||'' };
+  ['rn','ru'].forEach((pre,k)=>{
+    const el = document.getElementById(pre+i);
+    if(el) el.value = [S.restaurants[i].name, S.restaurants[i].url][k];
+  });
+}
+function googleIt(i){
+  const n = (document.getElementById('rn'+i).value||'').trim();
+  if(!n){ flash('先填店名。','warn'); return; }
+  const area = (S.area || (document.getElementById('area')||{}).value || '');
+  window.open('https://www.google.com/search?q='+encodeURIComponent(n+' '+area), '_blank', 'noopener');
+}
+
+/* ── 隨機抽店（依地區＋類型產生，不連外部網站） ── */
+const TYPE_DB = [
+  { keys:['吃到飽','buffet','自助','海鮮'], name:'吃到飽', osm:['buffet','seafood'],
+    items:['饗食天堂','饗饗 INPARADISE','漢來海港餐廳','島語自助餐廳','果然匯','欣葉日本料理'] },
+  { keys:['火鍋','鍋物','涮涮','鍋'], name:'火鍋', osm:['hot_pot','hotpot','shabu_shabu'],
+    items:['這一鍋','石二鍋','錢都日式涮涮鍋','聚 北海道昆布鍋','築間幸福鍋物','肉多多火鍋','海底撈'] },
+  { keys:['麻辣','川菜','四川','辣'], name:'麻辣川菜', osm:['sichuan','hot_pot','chinese'],
+    items:['老四川巴蜀麻辣燙','詹記麻辣火鍋','鼎王麻辣鍋','天香回味','開飯川食堂'] },
+  { keys:['燒肉','烤肉','燒烤'], name:'燒肉', osm:['barbecue','bbq','yakiniku','korean'],
+    items:['燒肉眾','原燒','乾杯燒肉','燒肉Smile','胖肚肚燒肉','上禾町日式燒肉'] },
+  { keys:['日式','日本','壽司','丼','拉麵','居酒屋','串燒'], name:'日式', osm:['japanese','sushi','ramen','izakaya'],
+    items:['大戶屋','藝奇新日本料理','藏壽司','勝博殿','丸龜製麵','樂座爐端燒'] },
+  { keys:['韓','韓式','韓國','炸雞'], name:'韓式', osm:['korean','chicken'],
+    items:['涓豆腐','韓姜熙的小廚房','豆腐村','兩班家韓式碳烤'] },
+  { keys:['熱炒','台菜','台式','合菜','中式','中菜','桌菜'], name:'台菜合菜', osm:['chinese','taiwanese','asian'],
+    items:['欣葉台菜','青葉台菜','雙月食品社','參和院','鵝肉城','大三元酒樓'] },
+  { keys:['泰','南洋','越','東南亞'], name:'泰式南洋', osm:['thai','vietnamese','asian'],
+    items:['瓦城泰國料理','饗泰多','NARA Thai Cuisine','非常泰','泰街邊'] },
+  { keys:['義','西式','美式','牛排','排餐','餐酒','啤酒','酒'], name:'西式餐酒', osm:['italian','pizza','steak_house','american','western'],
+    items:['貳樓餐廳','金色三麥','洋城義大利餐廳','我家牛排','貴族世家','Chili\'s'] },
+  { keys:['港','粵','點心','飲茶'], name:'港式', osm:['cantonese','dim_sum','chinese'],
+    items:['添好運','點點心','糖朝'] },
+  { keys:['素','蔬食','vegan'], name:'蔬食', osm:['vegetarian','vegan'],
+    items:['果然匯','寬心園','養心茶樓','蔬河'] }
+];
+function matchTypes(cui){
+  const q = (cui||'').toLowerCase();
+  if(!q) return null;
+  const hit = TYPE_DB.filter(t=> t.keys.some(k=> q.indexOf(k.toLowerCase())>=0));
+  return hit.length ? hit : null;
+}
+function suggestNames(cui){
+  const hit = matchTypes(cui);
+  if(hit) return { names:[].concat.apply([], hit.map(t=>t.items)), label:hit.map(t=>t.name).join('・') };
+  const mix = ['吃到飽','火鍋','燒肉','台菜合菜','日式'];
+  const names = [].concat.apply([], TYPE_DB.filter(t=>mix.indexOf(t.name)>=0).map(t=>t.items.slice(0,4)));
+  return { names:names, label:'綜合' };
+}
+function matchArea(txt, area){
+  if(!area) return true;
+  for(let i=0;i+2<=area.length;i++){ if(txt.indexOf(area.substr(i,2))>=0) return true; }
+  return false;
+}
+function rollNote(msg, warn){
+  const el = document.getElementById('rollStatus');
+  if(!el) return;
+  el.innerHTML = msg ? '<div class="flash'+(warn?' warn':'')+'" style="margin:12px 0 0">'+msg+'</div>' : '';
+}
+/* ── 從地圖抓（OpenStreetMap，需要對外連線） ── */
+const OVERPASS = [
+  'https://overpass-api.de/api/interpreter',
+  'https://overpass.kumi.systems/api/interpreter',
+  'https://overpass.private.coffee/api/interpreter',
+  'https://overpass.osm.ch/api/interpreter'
+];
+let mapCache = { key:'', list:[] };
+async function grab(url, opt){
+  const ctrl = new AbortController();
+  const timer = setTimeout(()=>ctrl.abort(), 25000);
+  try{
+    const res = await fetch(url, Object.assign({ signal:ctrl.signal }, opt||{}));
+    clearTimeout(timer);
+    if(!res.ok) throw new Error('HTTP '+res.status);
+    return await res.json();
+  }catch(e){
+    clearTimeout(timer);
+    throw new Error(e.name==='AbortError' ? '等超過 25 秒' : e.message);
+  }
+}
+async function geocode(area){
+  const d = await grab('https://nominatim.openstreetmap.org/search?format=json&limit=1&q='+encodeURIComponent(area));
+  if(!d || !d.length) throw new Error('找不到「'+area+'」這個地方');
+  return [parseFloat(d[0].lat), parseFloat(d[0].lon)];
+}
+async function overpassNear(lat, lon, radius){
+  const q = '[out:json][timeout:25];nwr["amenity"="restaurant"]["name"](around:'+radius+','+lat+','+lon+');out center;';
+  let last = '';
+  for(const url of OVERPASS){
+    const host = url.split('/')[2];
+    try{
+      const data = await grab(url, { method:'POST',
+        headers:{'Content-Type':'application/x-www-form-urlencoded'},
+        body:'data='+encodeURIComponent(q) });
+      const seen = {}, out = [];
+      (data.elements||[]).forEach(el=>{
+        const t = el.tags||{};
+        const n = (t.name||'').trim();
+        if(!n || seen[n]) return;
+        seen[n] = 1;
+        out.push({ name:n, cuisine:(t.cuisine||'').toLowerCase() });
+      });
+      return { list:out, host:host };
+    }catch(e){ last = host+'：'+e.message; }
+  }
+  throw new Error('四台地圖伺服器都連不上（最後 '+last+'）');
+}
+async function rollFromMap(){
+  const area = ((document.getElementById('area')||{}).value||'').trim();
+  const cui  = ((document.getElementById('cuisine')||{}).value||'').trim();
+  if(!area){ rollNote('先填「地區」，例如「新北市板橋區」或「台北市信義區」。', true); return; }
+  S.area = area;
+  const key = area+'|'+cui;
+  const btn = document.getElementById('mapBtn');
+
+  if(mapCache.key === key && mapCache.list.length >= 4){
+    pickFromMap(mapCache.list, area, cui, true);
+    return;
+  }
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span>載入中…';
+  rollNote('正在向 OpenStreetMap 查「'+area+'」附近的餐廳，載入中…');
+  try{
+    const c = await geocode(area);
+    let got = [], host = '';
+    for(const radius of [1200, 2500, 4000]){
+      const r = await overpassNear(c[0], c[1], radius);
+      got = r.list; host = r.host;
+      if(got.length >= 8) break;
+    }
+    if(got.length < 1) throw new Error('這一帶的地圖上沒有登記餐廳');
+    mapCache = { key:key, list:got };
+    pickFromMap(got, area, cui, false, host);
+  }catch(e){
+    rollNote('地圖抓不到：'+e.message+'。<br>這個功能要連到 OpenStreetMap，在 Claude 的預覽視窗裡通常會被擋掉——把檔案下載下來用瀏覽器打開，或部署到 Cloudflare Pages 就會正常。先按「🎲 店家清單抽 4 間」也可以。', true);
+    console.error(e);
+  }
+  btn.disabled = false; btn.textContent = '🗺 從地圖抓 4 間';
+}
+function pickFromMap(list, area, cui, cached, host){
+  const hit = matchTypes(cui);
+  const osm = hit ? [].concat.apply([], hit.map(t=>t.osm||[])) : [];
+  let use = list;
+  if(cui){
+    const zh = cui.split(/[\s,，]+/).filter(Boolean);
+    const f = list.filter(r=>
+      osm.some(k=> r.cuisine.indexOf(k)>=0) || zh.some(k=> r.name.indexOf(k)>=0));
+    if(f.length >= 4) use = f;
+  }
+  const pool = use.slice();
+  for(let i=pool.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=pool[i]; pool[i]=pool[j]; pool[j]=t; }
+  const pick = pool.slice(0,4);
+  pick.forEach((r,i)=> fillRest(i, { name:r.name, url:'' }));
+  for(let i=pick.length;i<4;i++) fillRest(i, { name:'', url:'' });
+  rollNote('地圖上「'+area+'」附近共 '+list.length+' 間'+(use!==list?('，符合「'+cui+'」的 '+use.length+' 間'):'')+
+    '，抽出 '+pick.length+' 間'+(cached?'（沿用剛剛抓到的資料，再按可重抽）':(host?'（來源 '+host+'）':''))+
+    '。地圖資料可能有歇業或非聚餐型的店，發布前用「去 Google 看 ↗」確認一下。', false);
+}
+
+function rollRestaurants(){
+  const area = ((document.getElementById('area')||{}).value||'').trim();
+  const cui  = ((document.getElementById('cuisine')||{}).value||'').trim();
+  if(area) S.area = area;
+
+  const mine = poolArr();
+  const mineHit = area ? mine.filter(n=> matchArea(n, area)) : mine;
+  const sug = suggestNames(cui);
+  const sugNames = sug.names.map(n=> area ? (n+' '+area) : n);
+
+  const seen = {}, cand = [];
+  const push = arr => arr.forEach(n=>{ if(n && !seen[n]){ seen[n]=1; cand.push(n); } });
+  push(mineHit); push(sugNames);
+  if(cand.length < 4) push(mine);
+  if(cand.length < 4){ rollNote('可抽的店不到 4 間，先在下面的清單新增幾間。', true); return; }
+
+  const pool = cand.slice();
+  for(let i=pool.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=pool[i]; pool[i]=pool[j]; pool[j]=t; }
+  const pick = pool.slice(0,4);
+  pick.forEach((name,i)=> fillRest(i, { name:name, url:'' }));
+
+  const own = pick.filter(n=> mine.indexOf(n)>=0).length;
+  rollNote('依「'+(area||'未指定地區')+'・'+sug.label+'」抽出 4 間'+
+    (own?('（自訂清單 '+own+' 間＋建議 '+(4-own)+' 間）'):'（建議名單）')+
+    '，不喜歡就再按一次。連鎖店不一定每區都有，發布前用「去 Google 看 ↗」確認一下。');
+}
+
+function poolArr(){
+  const seen = {}, out = [];
+  String(S.pool||'').split('\n').forEach(l=>{
+    const t = l.trim();
+    if(!t || seen[t]) return;
+    seen[t] = 1; out.push(t);
+  });
+  return out;
+}
+function setPool(arr){ S.pool = arr.join('\n'); renderPool(); }
+function renderPool(){
+  const arr = poolArr();
+  const cnt = document.getElementById('poolCount');
+  if(cnt) cnt.textContent = arr.length + ' 間';
+  const box = document.getElementById('poolItems');
+  if(!box) return;
+  box.innerHTML = arr.length
+    ? arr.map((n,i)=>'<div class="pitem"><span>'+esc(n)+'</span>'+
+        '<button type="button" class="px" onclick="delPool('+i+')" aria-label="刪除">✕</button></div>').join('')
+    : '<p class="hint" style="margin:12px 0 0">清單是空的，用上面的欄位新增。</p>';
+}
+function addPool(){
+  const el = document.getElementById('poolNew');
+  const raw = (el.value||'').trim();
+  if(!raw){ el.focus(); return; }
+  const arr = poolArr();
+  let added = 0;
+  raw.split(/[,，\n]/).forEach(t=>{
+    const n = t.trim();
+    if(n && arr.indexOf(n) < 0){ arr.push(n); added++; }
+  });
+  setPool(arr);
+  el.value = ''; el.focus();
+  rollNote(added ? ('已新增 '+added+' 間，清單目前 '+arr.length+' 間。') : '這間已經在清單裡了。', !added);
+}
+function delPool(i){
+  const arr = poolArr();
+  const name = arr[i];
+  arr.splice(i,1);
+  setPool(arr);
+  rollNote(name ? ('已刪掉「'+name+'」。') : '');
+}
+function fillPool(){ renderPool(); }
+function rollNote(msg, warn){
+  const el = document.getElementById('rollStatus');
+  if(!el) return;
+  el.innerHTML = msg ? '<div class="flash'+(warn?' warn':'')+'" style="margin:12px 0 0">'+msg+'</div>' : '';
+}
+function rollRestaurants(){
+  const pool = poolArr();
+  if(pool.length < 4){
+    rollNote('清單裡至少要有 4 間才抽得動，現在只有 '+pool.length+' 間。打開下面的「店家清單」補一下。', true);
+    return;
+  }
+  for(let i=pool.length-1;i>0;i--){ const j=Math.floor(Math.random()*(i+1)); const t=pool[i]; pool[i]=pool[j]; pool[j]=t; }
+  pool.slice(0,4).forEach((name,i)=> fillRest(i, { name:name, url:'' }));
+  rollNote('從 '+poolArr().length+' 間裡隨機抽出 4 間，不喜歡就再按一次。');
+}
+
+function onArea(){ S.area = document.getElementById('area').value.trim(); }
+function openSearch(kind){
+  const area = (document.getElementById('area').value||'').trim();
+  const cui  = (document.getElementById('cuisine').value||'').trim();
+  if(!area){ flash('先填地區，例如「台北市信義區」。','warn'); return; }
+  S.area = area;
+  const base = area+' '+(cui||'餐廳');
+  let url;
+  if(kind==='maps') url = 'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(base+' 聚餐 包廂');
+  else if(kind==='blog') url = 'https://www.google.com/search?q='+encodeURIComponent(base+' 食記 推薦 部落格');
+  else url = 'https://www.google.com/search?q='+encodeURIComponent(base+' 聚餐推薦 2026');
+  window.open(url, '_blank', 'noopener');
+}
+
+/* ── 發布 ── */
+async function publish(){
+  if(!S.fuwei){ flash('先選本次福委。','warn'); return; }
+  const ds = S.dates.filter(Boolean);
+  if(ds.length < 2){ flash('至少要填 2 個日期才有得投。','warn'); return; }
+  if(new Set(ds).size !== ds.length){ flash('日期重複了，改一下。','warn'); return; }
+  const rs = activeRests();
+  if(rs.length < 2){ flash('至少要填 2 間餐廳。','warn'); return; }
+  S.published = true;
+  const btn = document.getElementById('publishBtn');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span>發布中';
+  const ok = await save();
+  btn.disabled = false; btn.textContent = '發布投票';
+  if(ok){ flash('已發布，把這個連結貼到群組就可以開始投票。'); render(); window.scrollTo({top:0,behavior:'smooth'}); }
+}
+function backToSetup(){
+  editing = true;
+  document.getElementById('setupView').classList.remove('hide');
+  document.getElementById('voteView').classList.add('hide');
+  renderRota(); buildDateInputs(); buildRestCards(); fillPool();
+  window.scrollTo({top:0,behavior:'smooth'});
+}
+
+/* ══ 投票畫面 ══ */
+function activeDates(){ return (S.dates||[]).map((d,i)=>({d,i})).filter(x=>x.d); }
+function activeRests(){
+  return (S.restaurants||[]).map((r,i)=>({r:Object.assign({name:'',url:''},r||{}),i}))
+    .filter(x=>String(x.r.name||'').trim());
+}
+
+function renderWho(){
+  document.getElementById('whoList').innerHTML = ROSTER.map(n=>{
+    const v = S.votes[n];
+    const done = v ? '已投' : '未投';
+    return '<button class="opt" aria-pressed="'+(me===n)+'" onclick="pickMe(\''+n+'\')">'+
+      '<span class="tick">✓</span><span class="name">'+n+'</span>'+
+      '<span class="meta">'+done+(v&&v.plus?' · 攜伴':'')+'</span></button>';
+  }).join('');
+  const off = !me;
+  const b = document.getElementById('voteBody');
+  b.style.opacity = off?.45:1; b.style.pointerEvents = off?'none':'auto';
+}
+function draftFrom(v){
+  if(!v) return { dates:[], rests:[], plus:false };
+  const rs = Array.isArray(v.rests) ? v.rests.slice() : (v.rest!=null ? [v.rest] : []);
+  return { dates:(v.dates||[]).slice(), rests:rs.slice(0,2), plus:!!v.plus };
+}
+function pickMe(n){
+  me = (me===n? null : n);
+  draft = draftFrom(S.votes[me] || null);
+  renderWho(); renderVoteOpts();
+  document.getElementById('saveVote').textContent = v ? '更新我的票' : '送出我的票';
+}
+function renderVoteOpts(){
+  document.getElementById('dateOpts').innerHTML = activeDates().map(({d,i})=>
+    '<button class="opt" aria-pressed="'+draft.dates.includes(i)+'" onclick="toggleDate('+i+')">'+
+    '<span class="tick">✓</span><span class="name">'+fmtDate(d)+'<span class="dow-tag">'+dowOf(d)+'</span></span></button>'
+  ).join('');
+  const full = draft.rests.length >= 2;
+  document.getElementById('restOpts').innerHTML = activeRests().map(({r,i})=>{
+    const on = draft.rests.includes(i);
+    return '<div class="ropt"><button class="opt'+(full&&!on?' dim':'')+'" aria-pressed="'+on+'" onclick="pickRest('+i+')">'+
+    '<span class="tick">✓</span><span class="name">'+esc(r.name)+'</span></button>'+
+    (r.url?'<a class="rlink" href="'+esc(r.url)+'" target="_blank" rel="noopener">看食記 ↗</a>':'')+
+    '</div>';
+  }).join('');
+  const rh = document.getElementById('restHint');
+  if(rh) rh.innerHTML = '每人最多選兩間　·　已選 <b style="color:var(--acc);font-family:var(--num);font-weight:600">'+draft.rests.length+'</b> / 2';
+  document.getElementById('plusOne').setAttribute('aria-pressed', draft.plus);
+}
+function toggleDate(i){
+  const k = draft.dates.indexOf(i);
+  if(k<0) draft.dates.push(i); else draft.dates.splice(k,1);
+  renderVoteOpts();
+}
+function pickRest(i){
+  const k = draft.rests.indexOf(i);
+  if(k>=0){ draft.rests.splice(k,1); }
+  else if(draft.rests.length>=2){ flash('每人最多選兩間，先取消一間再選。','warn'); return; }
+  else draft.rests.push(i);
+  renderVoteOpts();
+}
+function togglePlus(){ draft.plus = !draft.plus; renderVoteOpts(); }
+
+async function saveVote(){
+  if(!me){ flash('先選你的名字。','warn'); return; }
+  if(!draft.dates.length){ flash('至少勾一個可以出席的日期。','warn'); return; }
+  if(!draft.rests.length){ flash('至少選一間餐廳，最多兩間。','warn'); return; }
+  if(draft.rests.length>2){ flash('每人最多選兩間。','warn'); return; }
+  const btn = document.getElementById('saveVote');
+  btn.disabled = true; btn.innerHTML = '<span class="spin"></span>送出中';
+  const latest = await load();
+  if(latest && latest.published){ latest.votes = latest.votes||{}; S = latest; }
+  S.votes[me] = { dates:draft.dates.slice(), rests:draft.rests.slice(0,2), plus:draft.plus, at:new Date().toISOString() };
+  const ok = await save();
+  btn.disabled = false; btn.textContent = '更新我的票';
+  if(ok){ flash(me+'，你的票收到了。'); renderWho(); renderTally(); }
+}
+
+/* ── 統計 ── */
+function counts(){
+  const dc = {}, rc = {}, dn = {}, rn = {};
+  activeDates().forEach(({i})=>{ dc[i]=0; dn[i]=[]; });
+  activeRests().forEach(({i})=>{ rc[i]=0; rn[i]=[]; });
+  Object.keys(S.votes).forEach(n=>{
+    const v = S.votes[n];
+    (v.dates||[]).forEach(i=>{ if(dc[i]!=null){ dc[i]++; dn[i].push(n); } });
+    const rs = Array.isArray(v.rests) ? v.rests : (v.rest!=null ? [v.rest] : []);
+    rs.forEach(i=>{ if(rc[i]!=null){ rc[i]++; rn[i].push(n); } });
+  });
+  return {dc,rc,dn,rn};
+}
+function voteMatrix(headLabel, cols, getCell){
+  let t = '<div class="sheetwrap"><table class="vote"><tr><th class="rowh">'+headLabel+'</th>'+
+    cols.map(c=>'<th class="'+(c.win?'win':'')+'">'+c.label+'</th>').join('')+'</tr>';
+  ROSTER.forEach(n=>{
+    t += '<tr><td class="rowh">'+n+'</td>'+
+      cols.map(c=>'<td class="'+(c.win?'wincol':'')+'">'+
+        (getCell(n,c) ? '<span class="dot">✓</span>' : '<span class="nil">·</span>')+'</td>').join('')+'</tr>';
+  });
+  t += '<tr class="total"><td class="rowh">合計</td>'+
+    cols.map(c=>'<td class="'+(c.win?'wincol':'')+'">'+c.count+'</td>').join('')+'</tr>';
+  return t+'</table></div>';
+}
+function voteCols(){
+  const {dc,rc} = counts();
+  const dMax = Math.max(0,...Object.values(dc)), rMax = Math.max(0,...Object.values(rc));
+  const dCols = activeDates().map(({d,i})=>({ i, label:fmtDate(d)+'<span class="dw">'+dowOf(d)+'</span>',
+    plain:fmtDate(d)+'（'+dowOf(d).slice(1)+'）', count:dc[i], win:dc[i]>0&&dc[i]===dMax }));
+  const rCols = activeRests().map(({r,i})=>({ i, label:esc(r.name), plain:r.name,
+    count:rc[i], win:rc[i]>0&&rc[i]===rMax }));
+  const plusN = Object.keys(S.votes).filter(n=>S.votes[n].plus).length;
+  const pCols = [{ i:0, label:'攜伴打V', plain:'攜伴打V', count:plusN, win:false }];
+  return {dCols, rCols, pCols};
+}
+const cellDate = (n,c)=>{ const v=S.votes[n]; return !!(v && (v.dates||[]).includes(c.i)); };
+const cellRest = (n,c)=>{ const v=S.votes[n]; if(!v) return false;
+  const rs = Array.isArray(v.rests)? v.rests : (v.rest!=null?[v.rest]:[]); return rs.includes(c.i); };
+const cellPlus = (n)=>{ const v=S.votes[n]; return !!(v && v.plus); };
+
+function renderTally(){
+  const {dCols, rCols, pCols} = voteCols();
+  document.getElementById('matrixOut').innerHTML =
+    '<div class="mlabel">日期</div>'   + voteMatrix('日期', dCols, cellDate) +
+    '<div class="mlabel">餐廳（每人最多兩間）</div>' + voteMatrix('餐廳', rCols, cellRest) +
+    '<div class="mlabel">攜伴</div>'   + voteMatrix('人數', pCols, cellPlus);
+
+  const voters = Object.keys(S.votes);
+  const plus = voters.filter(n=>S.votes[n].plus).length;
+  const total = voters.length + plus;
+  document.getElementById('summary').innerHTML =
+    '<div><div class="n">'+voters.length+'／'+ROSTER.length+'</div><div class="k">已回覆</div></div>'+
+    '<div><div class="n">'+plus+'</div><div class="k">攜伴</div></div>'+
+    '<div><div class="n">'+total+'</div><div class="k">總人數</div></div>';
+  const left = ROSTER.filter(n=>!S.votes[n]);
+  document.getElementById('pending').innerHTML = left.length
+    ? '還沒投的：<b>'+left.join('、')+'</b>　·　預算上限 '+(total*1000).toLocaleString()+' 元（'+total+' 人 × 1000）'
+    : '全員到齊　·　預算上限 <b>'+(total*1000).toLocaleString()+'</b> 元（'+total+' 人 × 1000，含 10% 服務費）';
+}
+
+function closeImg(){ document.getElementById('imgModal').classList.add('hide'); }
+
+/* ── 最後結果 ── */
+function topPick(map){
+  let best=null, max=-1;
+  Object.keys(map).forEach(k=>{ if(map[k]>max){ max=map[k]; best=parseInt(k,10); } });
+  return best;
+}
+function slash(d, pad){
+  if(!d) return '';
+  const t=new Date(d+'T00:00:00'); if(isNaN(t)) return d;
+  const m=t.getMonth()+1, day=t.getDate();
+  return pad ? t.getFullYear()+'/'+String(m).padStart(2,'0')+'/'+String(day).padStart(2,'0')
+             : t.getFullYear()+'/'+m+'/'+day;
+}
+function renderFinalForm(){
+  const {dc,rc} = counts();
+  const ds = activeDates(), rs = activeRests();
+  const f = S.final || {};
+  const dSel = document.getElementById('fDate'), rSel = document.getElementById('fRest');
+  if(!dSel || !rSel) return;
+  const wd = f.dateIdx!=null ? f.dateIdx : topPick(dc);
+  const wr = f.restIdx!=null ? f.restIdx : topPick(rc);
+  dSel.innerHTML = ds.map(({d,i})=>'<option value="'+i+'"'+(i===wd?' selected':'')+'>'+fmtDate(d)+' '+dowOf(d)+'（'+dc[i]+' 票）</option>').join('');
+  rSel.innerHTML = rs.map(({r,i})=>'<option value="'+i+'"'+(i===wr?' selected':'')+'>'+esc(r.name)+'（'+rc[i]+' 票）</option>').join('');
+  const tSel = document.getElementById('fTime');
+  if(tSel && !tSel.options.length){
+    let opts = '';
+    for(let mm=11*60; mm<=21.5*60; mm+=30){
+      const v = String(Math.floor(mm/60)).padStart(2,'0')+':'+String(mm%60).padStart(2,'0');
+      opts += '<option value="'+v+'"'+(v==='19:30'?' selected':'')+'>'+v+'</option>';
+    }
+    tSel.innerHTML = opts;
+  }
+  if(f.time) tSel.value = f.time;
+  if(f.budget) document.getElementById('fBudget').value = f.budget;
+  if(f.address) document.getElementById('fAddr').value = f.address;
+  if(f.published) drawFinalTable();
+}
+function readFinal(){
+  const di = parseInt(document.getElementById('fDate').value,10);
+  const ri = parseInt(document.getElementById('fRest').value,10);
+  const r = (S.restaurants||[])[ri] || {};
+  return {
+    dateIdx: di, restIdx: ri,
+    date: S.dates[di]||'', name: r.name||'',
+    address: document.getElementById('fAddr').value.trim(),
+    time: document.getElementById('fTime').value || '19:30',
+    budget: document.getElementById('fBudget').value.trim() || '1000/人',
+    fuwei: S.fuwei || '', published: true
+  };
+}
+function drawFinalTable(){
+  const f = S.final; if(!f) return;
+  const rows = [
+    ['聚餐地點', esc(f.name), f.address?esc(f.address):'', true],
+    ['日期 / 時間', slash(f.date)+' '+dowOf(f.date), esc(f.time), false],
+    ['金額預算', esc(f.budget), '含 10% 服務費', false],
+    ['福委', esc(f.fuwei||'—'), '', false]
+  ];
+  document.getElementById('finalOut').innerHTML =
+    '<div class="final">'+rows.map(r=>
+      '<div class="fr'+(r[3]?' hi':'')+'"><span class="fk">'+r[0]+'</span>'+
+      '<span class="fv">'+r[1]+(r[2]?'<small>'+r[2]+'</small>':'')+'</span></div>').join('')+'</div>'+
+    '<div class="btnrow"><button class="btn ghost sm" onclick="exportFinalImage()">這張存成圖片</button></div>';
+}
+async function makeFinal(){
+  if(!document.getElementById('fDate').value){ flash('還沒有日期可以選。','warn'); return; }
+  const latest = await load();
+  if(latest && latest.published){ S = Object.assign(blank(), latest); }
+  S.final = readFinal();
+  await save();
+  drawFinalTable();
+  flash('最後結果已產生，大家重新整理就看得到。');
+}
+async function exportFinalImage(){
+  const f = S.final; if(!f) return;
+  try{ await document.fonts.ready; }catch(e){}
+  const SANS='"Inter","Noto Sans TC","PingFang TC",sans-serif';
+  const C = { ink:'#17191C', ink2:'#5B6169', ink3:'#9AA0A8', line:'#E7E9EC',
+              acc:'#0E7C66', accTint:'#E9F4F1', accInk:'#0A5A4A' };
+  const rows = [
+    ['聚餐地點', f.name || '—', f.address || '', true],
+    ['日期 / 時間', slash(f.date)+' '+dowOf(f.date), f.time || '', false],
+    ['金額預算', f.budget || '', '含 10% 服務費', false],
+    ['福委', f.fuwei || '—', '', false]
+  ];
+  const M=32, W=680, HEAD=104, RH=74;
+  const H = HEAD + rows.length*RH + M;
+  const dpr=2, cv=document.createElement('canvas');
+  cv.width=W*dpr; cv.height=H*dpr;
+  const c=cv.getContext('2d'); c.scale(dpr,dpr);
+  c.fillStyle='#FFFFFF'; c.fillRect(0,0,W,H);
+
+  c.textAlign='left';
+  c.fillStyle=C.ink3; c.font='14px '+SANS;
+  c.fillText('客資部 · 部門聚餐', M, 44);
+  c.fillStyle=C.ink; c.font='600 27px '+SANS;
+  c.fillText('聚餐最後結果', M, 80);
+
+  let y = HEAD;
+  rows.forEach(r=>{
+    if(r[3]){ c.fillStyle=C.accTint; c.fillRect(M, y, W-M*2, RH); }
+    c.strokeStyle=C.line; c.lineWidth=1;
+    c.beginPath(); c.moveTo(M, y+RH+.5); c.lineTo(W-M, y+RH+.5); c.stroke();
+    c.fillStyle = r[3] ? C.accInk : C.ink3;
+    c.font='14px '+SANS;
+    c.fillText(r[0], M+18, y+(r[2]?32:44));
+    c.fillStyle = r[3] ? C.accInk : C.ink;
+    c.font='500 19px '+SANS;
+    c.fillText(r[1], M+150, y+(r[2]?32:44));
+    if(r[2]){
+      c.fillStyle = r[3] ? C.accInk : C.ink3;
+      c.font='14px '+SANS;
+      c.fillText(r[2], M+150, y+56);
+    }
+    y += RH;
+  });
+  c.strokeStyle=C.line; c.strokeRect(M+.5, HEAD+.5, W-M*2, rows.length*RH);
+
+  const url=cv.toDataURL('image/png');
+  document.getElementById('imgOut').src=url;
+  const a=document.getElementById('dlBtn'); a.href=url;
+  a.download='聚餐公告_'+slash(f.date).replace(/\//g,'-')+'.png';
+  document.getElementById('imgModal').classList.remove('hide');
+}
+
+async function exportImage(){
+  try{ await document.fonts.ready; }catch(err){}
+  const SANS='"Inter","Noto Sans TC","PingFang TC",sans-serif';
+  const MONO=SANS;
+  const C = { ink:'#17191C', ink2:'#5B6169', ink3:'#9AA0A8', line:'#E7E9EC', tint:'#F7F8F9',
+              acc:'#0E7C66', accTint:'#E9F4F1' };
+  const {dCols, rCols, pCols} = voteCols();
+  const voters = Object.keys(S.votes);
+  const plus = voters.filter(n=>S.votes[n].plus).length;
+  const total = voters.length + plus;
+  const left = ROSTER.filter(n=>!S.votes[n]);
+
+  const M=28, LW=104, HH=40, RH=32, GAP=30, LBL=26;
+  const cw = cols => Math.max(96, Math.min(190, Math.floor(560/Math.max(1,cols.length))));
+  const dW=cw(dCols), rW=Math.max(120, cw(rCols)), pW=150;
+  const tblW = c => LW + c.length*(c===dCols?dW:(c===rCols?rW:pW));
+  const W = Math.max(560, M*2 + Math.max(tblW(dCols), tblW(rCols), tblW(pCols)));
+  const tblH = (ROSTER.length+2)*RH + (HH-RH);
+  const HEAD = 116;
+  const H = HEAD + (LBL+tblH+GAP)*3 + 70;
+
+  const dpr=2, cv=document.createElement('canvas');
+  cv.width=W*dpr; cv.height=H*dpr;
+  const c=cv.getContext('2d'); c.scale(dpr,dpr);
+  c.fillStyle='#fff'; c.fillRect(0,0,W,H);
+
+  function fit(t,w){ if(c.measureText(t).width<=w-10) return t; let s=t;
+    while(s.length>1 && c.measureText(s+'…').width>w-10) s=s.slice(0,-1); return s+'…'; }
+  function cell(x,y,w,hgt,text,bg,bold,sub,fg,align){
+    c.fillStyle=bg; c.fillRect(x,y,w,hgt);
+    c.strokeStyle=C.line; c.lineWidth=1; c.strokeRect(x+.5,y+.5,w,hgt);
+    c.textAlign = align || 'center';
+    const tx = align==='left' ? x+13 : x+w/2;
+    c.fillStyle = fg || C.ink;
+    c.font=(bold?'500 ':'')+'14px '+SANS;
+    if(sub){
+      c.fillText(fit(text,w), tx, y+hgt/2-1);
+      c.font='11px '+SANS; c.fillStyle=C.ink3;
+      c.fillText(sub, tx, y+hgt/2+14);
+    }else{
+      c.fillText(fit(text,w), tx, y+hgt/2+5);
+    }
+  }
+  function mark(x,y,w,hgt,on,bg){
+    c.fillStyle=bg; c.fillRect(x,y,w,hgt);
+    c.strokeStyle=C.line; c.lineWidth=1; c.strokeRect(x+.5,y+.5,w,hgt);
+    if(on){
+      c.beginPath(); c.arc(x+w/2, y+hgt/2, 9, 0, Math.PI*2);
+      c.fillStyle=C.acc; c.fill();
+      c.fillStyle='#fff'; c.font='500 11px '+SANS; c.textAlign='center';
+      c.fillText('✓', x+w/2, y+hgt/2+4);
+    }else{
+      c.fillStyle=C.ink3; c.font='14px '+SANS; c.textAlign='center';
+      c.fillText('·', x+w/2, y+hgt/2+5);
+    }
+  }
+  function table(y, headLabel, cols, colW, getCell){
+    let x=M;
+    cell(x,y,LW,HH,headLabel,C.tint,true,'',C.ink2,'left');
+    cols.forEach((col,k)=> cell(x+LW+k*colW, y, colW, HH, col.plain.split('（')[0],
+      col.win?C.acc:C.tint, true, col.plain.indexOf('（')>0?('（'+col.plain.split('（')[1]):'',
+      col.win?'#ffffff':C.ink2));
+    let yy=y+HH;
+    ROSTER.forEach(n=>{
+      cell(x, yy, LW, RH, n, '#ffffff', true, '', C.ink, 'left');
+      cols.forEach((col,k)=> mark(x+LW+k*colW, yy, colW, RH, getCell(n,col), col.win?C.accTint:'#ffffff'));
+      yy+=RH;
+    });
+    cell(x, yy, LW, RH, '合計', '#ffffff', true, '', C.ink3, 'left');
+    cols.forEach((col,k)=> cell(x+LW+k*colW, yy, colW, RH, String(col.count), col.win?C.accTint:'#ffffff', true, '', C.ink));
+    return yy+RH;
+  }
+
+  // 抬頭
+  c.textAlign='left'; c.fillStyle=C.ink3; c.font='14px '+SANS;
+  c.fillText('客資部 · 部門聚餐', M, 44);
+  c.fillStyle=C.ink; c.font='600 28px '+SANS;
+  c.fillText('聚餐投票結果', M, 82);
+  c.fillStyle=C.ink2; c.font='14px '+SANS;
+  const now=new Date();
+  c.fillText('福委：'+(S.fuwei||'—')+(S.deadline?('　·　投票截止 '+slash(S.deadline,true)):'')+
+    '　·　更新 '+(now.getMonth()+1)+'/'+now.getDate()+' '+String(now.getHours()).padStart(2,'0')+':'+String(now.getMinutes()).padStart(2,'0'), M, 106);
+
+  let y = HEAD;
+  const sect = (t)=>{ c.textAlign='left'; c.fillStyle=C.ink2; c.font='500 13px '+SANS; c.fillText(t, M, y+16); return y+LBL; };
+  y = table(sect('日期'), '日期', dCols, dW, cellDate) + GAP;
+  y = table(sect('餐廳（每人最多兩間）'), '餐廳', rCols, rW, cellRest) + GAP;
+  y = table(sect('攜伴'), '人數', pCols, pW, (n)=>cellPlus(n)) + GAP;
+
+  c.textAlign='left'; c.fillStyle=C.ink2; c.font='14px '+SANS;
+  c.fillText('已回覆 '+voters.length+'／'+ROSTER.length+'　·　攜伴 '+plus+' 人　·　總人數 '+total+' 人'+
+    (left.length?('　·　還沒投：'+left.join('、')):''), M, y);
+  c.fillText('預算上限 '+(total*1000).toLocaleString()+' 元（'+total+' 人 × 1000，含 10% 服務費）', M, y+24);
+
+  const url=cv.toDataURL('image/png');
+  document.getElementById('imgOut').src=url;
+  const a=document.getElementById('dlBtn'); a.href=url;
+  a.download='聚餐投票結果_'+(now.getMonth()+1)+'-'+now.getDate()+'.png';
+  document.getElementById('imgModal').classList.remove('hide');
+}
+
+/* ══ 主流程 ══ */
+function render(){
+  const live = S.published;
+  editing = !live;
+  document.getElementById('setupView').classList.toggle('hide', live);
+  document.getElementById('voteView').classList.toggle('hide', !live);
+  if(live){
+    document.getElementById('sealBadge').classList.remove('hide');
+    document.getElementById('sealName').textContent = S.fuwei||'';
+    document.getElementById('sealIni').textContent = (S.fuwei||'').charAt(0);
+    renderDeadline(); renderWho(); renderVoteOpts(); renderTally(); renderFinalForm();
+  }else{
+    renderRota(); buildDateInputs(); buildRestCards(); fillPool();
+  }
+}
+async function refresh(loud){
+  if(busy || editing) return;
+  busy = true;
+  const latest = await load();
+  busy = false;
+  if(latest && latest.published){
+    S = Object.assign(blank(), latest);
+    render();
+    if(me) pickMeQuiet();
+    if(loud) flash('已更新到最新票數。');
+  }else if(loud){ flash('還沒有人發布投票。','warn'); }
+}
+function pickMeQuiet(){
+  const v = S.votes[me];
+  if(v) draft = draftFrom(v);
+  renderWho(); renderVoteOpts();
+}
+
+/* 點日曆以外的地方就收起來 */
+document.addEventListener('click', function(e){
+  if(!e.target.closest || !e.target.closest('.calpop, .dfield')) closeCal();
+});
+
+(async function init(){
+  const saved = await load();
+  if(saved && saved.published) S = Object.assign(blank(), saved);
+  render();
+  if(!hasStore) flash('這個環境沒有共用儲存，票只會留在這個視窗裡。','warn');
+  setInterval(()=>{ if(!document.hidden) refresh(false); }, 15000);
+})();
+</script>
+</body>
+</html>
